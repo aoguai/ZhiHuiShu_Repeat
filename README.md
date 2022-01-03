@@ -1,7 +1,6 @@
 # ZhiHuiShu-Repeat
 半自动回答习惯分平时分问题(改)
 
-<h1>aoguai-智慧树（知到）习惯分平时分问答垃圾话生成器V1.0.0</h1>
 <h2>感谢</h2>
 <div>本插件参考了以下作者的插件，特此标明来源<br>
 <blockquote>https://greasyfork.org/zh-CN/scripts/426715-whee1-%E6%99%BA%E6%85%A7%E6%A0%91-%E7%9F%A5%E5%88%B0-%E4%B9%A0%E6%83%AF%E5%88%86%E9%97%AE%E7%AD%94%E5%9E%83%E5%9C%BE%E8%AF%9D%E7%94%9F%E6%88%90%E5%99%A8</blockquote>
