@@ -41,3 +41,4 @@ var publish_p = 0, //是否自动点击发表，可改为1或0。1为自动点�
 <h2>BUG反馈</h2>
 没有联系方式，佛系修BUG，可以在该脚本的反馈下面留言<br>
 如需引用代码，无需授权，但希望能在您的项目中标明来源
+![image](https://github.com/aoguai/ZhiHuiShu-Repeat/blob/main/images/demonstration.png)
