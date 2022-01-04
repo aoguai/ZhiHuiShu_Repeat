@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         aoguai-智慧树（知到）习惯分平时分问答垃圾话生成器
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.5
 // @description  半自动回答习惯分平时分问题(改)
 // @author       aoguai
 // @require      https://unpkg.com/axios/dist/axios.min.js
@@ -10,8 +10,10 @@
 // ==/UserScript==
 
 //下方数值根据提示进行修改
-var publish_p = 0, //是否自动点击发表，可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
-    nonsence_p=0; //进入自动输入是否需要中立回答，可改为1或0。1为是，0为否。默认为0
+var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
+    nonsence_p=0, //进入问答后自动输入时，是否需要中立回答。可改为1或0。1为是，0为否。默认为0
+    close_p=0,//进入问答发表后是否自动关闭问答。（需要配合publish_p实现，仅publish_p开启时有效）可改为1或0。1为是，0为否。默认为0
+    refresh_p=0;//每当点击一个问答后是否自动刷新。可改为1或0。1为是，0为否。默认为0
 
 (function() {
   const e = document.createEvent("MouseEvents");
@@ -129,6 +131,22 @@ var publish_p = 0, //是否自动点击发表，可改为1或0。1为自动点�
       const btn = document.querySelector('div.up-btn.set-btn')
       if (btn == null) return
       btn.click()
+      //是否自动关闭当前页面
+      if(close_p == 1){
+          if (navigator.userAgent.indexOf('MSIE') > 0) { // close IE
+              if (navigator.userAgent.indexOf('MSIE 6.0') > 0) {
+                  window.opener = null;
+                  window.close();
+              } else {
+                  window.open('', '_top');
+                  window.top.close();
+              }
+          } else { // close chrome;It is effective when it is only one.
+              window.opener = null;
+              window.open('', '_self');
+              window.close();
+          }
+      }
   }
 
     //生成从minNum到maxNum的随机数
@@ -143,6 +161,24 @@ var publish_p = 0, //是否自动点击发表，可改为1或0。1为自动点�
             default:
                 return 0;
                 break;
+        }
+    }
+
+
+    function KeepScrollBar() {
+        var scrollPos;
+        if (typeof window.pageYOffset != 'undefined') {
+            scrollPos = window.pageYOffset;
+        }
+        else if (typeof document.body != 'undefined') {
+            scrollPos = document.getElementById('divContent').scrollTop;
+        }
+        document.cookie = "scrollTop=" + scrollPos;
+    }
+    window.onload = function (){
+        if (document.cookie.match(/scrollTop=([^;]+)(;|$)/) != null) {
+            var arr = document.cookie.match(/scrollTop=([^;]+)(;|$)/);
+            document.getElementById('divContent').scrollTop = parseInt(arr[1]);
         }
     }
 
@@ -183,6 +219,7 @@ var publish_p = 0, //是否自动点击发表，可改为1或0。1为自动点�
       ans = pageAnswer.filter( item => arr.includes(item.questionId))
         .map(item => `${item.userDto.username}${item.content}`)
       patchImprove(ans)
+      KeepScrollBar()
     })
   }
   async function patchImprove(res) {
@@ -195,9 +232,23 @@ var publish_p = 0, //是否自动点击发表，可改为1或0。1为自动点�
         child.innerText += "(已作答)"
         child.style.color = 'red'
         reqCount = 0
+        document.querySelector('.el-scrollbar__wrap').scrollTop +=150 //一个问答高度150
       }
     })
   }
+
+    document.body.onclick=function(){//是否刷新函数
+        if(refresh_p == 1){
+            const list = Array.from(document.querySelectorAll('.question-item'))
+            if(list != null){
+                list.forEach( item => {
+                    if (item.style.color != 'red') {
+                        location.reload();
+                    }
+                })
+            }
+        }
+    }
 
   window.onload = () => {
     if (state == 'home') setTimeout(home, 1000)
