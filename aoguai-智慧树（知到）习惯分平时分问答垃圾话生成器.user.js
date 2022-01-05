@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         aoguai-智慧树（知到）习惯分平时分问答垃圾话生成器
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
-// @description  半自动回答习惯分平时分问题(改)
+// @version      1.1.0
+// @description  智慧树（知到）习惯分平时分问答复读
 // @author       aoguai
 // @require      https://unpkg.com/axios/dist/axios.min.js
 // @match        https://qah5.zhihuishu.com/qa.html
@@ -10,10 +10,10 @@
 // ==/UserScript==
 
 //下方数值根据提示进行修改
-var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
+var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
     nonsence_p=0, //进入问答后自动输入时，是否需要中立回答。可改为1或0。1为是，0为否。默认为0
-    close_p=0,//进入问答发表后是否自动关闭问答。（需要配合publish_p实现，仅publish_p开启时有效）可改为1或0。1为是，0为否。默认为0
-    refresh_p=0;//每当点击一个问答后是否自动刷新。可改为1或0。1为是，0为否。默认为0
+    close_p=1,//进入问答发表后是否自动关闭问答。（需要配合publish_p实现，仅publish_p开启时有效）可改为1或0。1为是，0为否。默认为0
+    refresh_p=1;//每当点击一个问答后是否自动刷新。可改为1或0。1为是，0为否。默认为0
 
 (function() {
   const e = document.createEvent("MouseEvents");
@@ -133,6 +133,7 @@ var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0
       btn.click()
       //是否自动关闭当前页面
       if(close_p == 1){
+          sleep(1000); // 延时函数，单位ms
           if (navigator.userAgent.indexOf('MSIE') > 0) { // close IE
               if (navigator.userAgent.indexOf('MSIE 6.0') > 0) {
                   window.opener = null;
@@ -149,6 +150,11 @@ var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0
       }
   }
 
+    var sleep = function(time) {
+        var startTime = new Date().getTime() + parseInt(time, 10);
+        while(new Date().getTime() < startTime) {}
+    };
+
     //生成从minNum到maxNum的随机数
     function randomNum(minNum,maxNum){
         switch(arguments.length){
@@ -164,25 +170,7 @@ var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0
         }
     }
 
-
-    function KeepScrollBar() {
-        var scrollPos;
-        if (typeof window.pageYOffset != 'undefined') {
-            scrollPos = window.pageYOffset;
-        }
-        else if (typeof document.body != 'undefined') {
-            scrollPos = document.getElementById('divContent').scrollTop;
-        }
-        document.cookie = "scrollTop=" + scrollPos;
-    }
-    window.onload = function (){
-        if (document.cookie.match(/scrollTop=([^;]+)(;|$)/) != null) {
-            var arr = document.cookie.match(/scrollTop=([^;]+)(;|$)/);
-            document.getElementById('divContent').scrollTop = parseInt(arr[1]);
-        }
-    }
-
-  async function getMyAnswer() {
+    async function getMyAnswer() {
     const courseId = document.URL.split('/')[6].split('?')[0]
     let answered = JSON.parse(localStorage.getItem('answered')) || {}
     let currentCourse = answered[courseId] || null
@@ -215,11 +203,10 @@ var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0
     await axios.get(url, {params: data}).then( res => {
       pageAnswer = res.data.rt.questionInfoList
       arr = pageAnswer.map(item => item.questionId)
-        .filter(item => myAnswer.includes(item))
+        .filter(item => myAnswer.includes(item))//获取问答编号
       ans = pageAnswer.filter( item => arr.includes(item.questionId))
         .map(item => `${item.userDto.username}${item.content}`)
       patchImprove(ans)
-      KeepScrollBar()
     })
   }
   async function patchImprove(res) {
@@ -243,7 +230,7 @@ var publish_p = 0, //进入问答后是否，自动点击发表。可改为1或0
             if(list != null){
                 list.forEach( item => {
                     if (item.style.color != 'red') {
-                        location.reload();
+                        location.reload(true);
                     }
                 })
             }
