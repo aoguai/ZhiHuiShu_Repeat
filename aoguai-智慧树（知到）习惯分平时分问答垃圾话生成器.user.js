@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         aoguai-智慧树（知到）习惯分平时分问答垃圾话生成器
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  智慧树（知到）习惯分平时分问答复读
 // @author       aoguai
 // @require      https://unpkg.com/axios/dist/axios.min.js
@@ -13,7 +13,7 @@
 var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
     nonsence_p=0, //进入问答后自动输入时，是否需要中立回答。可改为1或0。1为是，0为否。默认为0
     close_p=1,//进入问答发表后是否自动关闭问答。（需要配合publish_p实现，仅publish_p开启时有效）可改为1或0。1为是，0为否。默认为0
-    refresh_p=1;//每当点击一个问答后是否自动刷新。可改为1或0。1为是，0为否。默认为0
+    refresh_p=0;//每当点击一个问答后是否自动刷新。可改为1或0。1为是，0为否。默认为0
 
 (function() {
   const e = document.createEvent("MouseEvents");
@@ -24,6 +24,7 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
   const MY_ANSWER_API = "https://creditqa.zhihuishu.com/creditqa/web/qa/myAnswerList"
   const HOT_QUESTION = "https://creditqa.zhihuishu.com/creditqa/web/qa/getHotQuestionList"
   const NEW_QUESTION = "https://creditqa.zhihuishu.com/creditqa/web/qa/getRecommendList"
+  const MY_QUESTION = "https://creditqa-api.zhihuishu.com/creditqa/web/qa/myParticipateQaNum"
   const config = {
     offset: 0,
     currURL: HOT_QUESTION
@@ -131,23 +132,26 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
       const btn = document.querySelector('div.up-btn.set-btn')
       if (btn == null) return
       btn.click()
+      //js 定时关闭窗口(ie和FF中测试过)
+      //2秒后自动关闭当前窗口
+      setTimeout(function(){
       //是否自动关闭当前页面
-      if(close_p == 1){
-          sleep(1000); // 延时函数，单位ms
-          if (navigator.userAgent.indexOf('MSIE') > 0) { // close IE
-              if (navigator.userAgent.indexOf('MSIE 6.0') > 0) {
+          if(close_p == 1){
+              if (navigator.userAgent.indexOf('MSIE') > 0) { // close IE
+                  if (navigator.userAgent.indexOf('MSIE 6.0') > 0) {
+                      window.opener = null;
+                      window.close();
+                  } else {
+                      window.open('', '_top');
+                      window.top.close();
+                  }
+              } else { // close chrome;It is effective when it is only one.
                   window.opener = null;
+                  window.open('', '_self');
                   window.close();
-              } else {
-                  window.open('', '_top');
-                  window.top.close();
               }
-          } else { // close chrome;It is effective when it is only one.
-              window.opener = null;
-              window.open('', '_self');
-              window.close();
           }
-      }
+      },2000);
   }
 
     var sleep = function(time) {
@@ -172,7 +176,7 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
 
     async function getMyAnswer() {
     const courseId = document.URL.split('/')[6].split('?')[0]
-    let answered = JSON.parse(localStorage.getItem('answered')) || {}
+    let answered = JSON.parse(localStorage.getItem('answered')) || {}//个人全课每科已回答问题ID
     let currentCourse = answered[courseId] || null
     let lastModified = JSON.parse(localStorage.getItem('lastModified')) || new Date() * 1
     let current = new Date() * 1
@@ -181,13 +185,14 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
       data.pageSize = 200
       await axios.get(MY_ANSWER_API, {params:data}).then( res => {
         currentCourse = res.data.rt.myAnswers.map(item => item.qid)
-        console.log(currentCourse)
+        console.log(currentCourse);
         answered[courseId] = currentCourse
         console.log(currentCourse);
         localStorage.setItem('answered', JSON.stringify(answered))
         localStorage.setItem('lastModified', JSON.stringify(new Date()*1))
       })
     }
+    console.log(answered[courseId]);
     return answered[courseId]
   }
 
@@ -209,6 +214,23 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
       patchImprove(ans)
     })
   }
+
+  async function diffImprove_s(url=MY_QUESTION, offset=0) {
+    if (url.includes('home')) return
+    let myAnswer, pageAnswer, arr, ans
+    //params and offset
+    const data = Object.assign(params)
+    data.pageIndex = config.offset
+    config.offset = data.pageIndex + offset
+    // get data
+    myAnswer = await getMyAnswer()
+    // console.log(myAnswer);
+    await axios.get(url, {params: data}).then( res => {
+      pageAnswer = res.data.rt.answerNum
+      return pageAnswer
+    })
+  }
+
   async function patchImprove(res) {
     // iterate dom list and add marks
     const list = Array.from(document.querySelectorAll('.question-item'))
@@ -219,7 +241,7 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
         child.innerText += "(已作答)"
         child.style.color = 'red'
         reqCount = 0
-        document.querySelector('.el-scrollbar__wrap').scrollTop +=150 //一个问答高度150
+        document.querySelector('.el-scrollbar__wrap').scrollTop += document.querySelector(".question-item").offsetHeight // 返回元素的总高度
       }
     })
   }
@@ -230,7 +252,7 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
             if(list != null){
                 list.forEach( item => {
                     if (item.style.color != 'red') {
-                        location.reload(true);
+                        location.reload(true)
                     }
                 })
             }
@@ -261,6 +283,7 @@ var publish_p = 1, //进入问答后是否，自动点击发表。可改为1或0
     async function home() {
       bindingHome()
       diffImprove()
+      diffImprove_s()
     }
   }
 })();
