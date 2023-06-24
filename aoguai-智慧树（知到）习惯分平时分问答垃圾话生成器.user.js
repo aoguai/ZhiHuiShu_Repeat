@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         aoguai-智慧树（知到）习惯分平时分问答半自动复读垃圾话生成器
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.1.9.1
 // @description  智慧树（知到）习惯分平时分问答半自动复读垃圾话生成器
 // @author       aoguai
 // @copyright    2023, aoguai (https://github.com/aoguai)
@@ -15,9 +15,9 @@
 /**
  * 主要配置参数
  */
-const publish_p = 1; // 进入问答后是否自动点击发表。可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
+const publish_p = 0; // 进入问答后是否自动点击发表。可改为1或0。1为自动点击发表，0为手动点击发表。默认为0
 const nonsense_p = 0; // 进入问答后自动输入时，是否需要中立与否定回答。可改为0、1、2、3。0为都不需要，1为需要中立回答，2为需要否定回答，3为都需要，默认为0
-const close_p = 1; // 进入问答发表后是否自动关闭问答。（需要配合publish_p实现，仅publish_p开启时有效）可改为1或0。1为是，0为否。默认为0
+const close_p = 0; // 进入问答发表后是否自动关闭问答。（需要配合publish_p实现，仅publish_p开启时有效）可改为1或0。1为是，0为否。默认为0
 
 
 (function() {
